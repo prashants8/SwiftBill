@@ -11,15 +11,29 @@ This is a Next.js application for managing ARC freight bills, integrated with Ge
 ## GitHub Connection & Deployment
 To connect this project to GitHub and enable automatic deployments via **Firebase App Hosting**:
 
-1. **Initialize Git**: Run `git init` in your project root.
-2. **Commit Changes**: Run `git add .` and `git commit -m "Initial project setup"`.
-3. **Push to GitHub**: Create a new repository on GitHub and push your local code there.
-4. **Firebase Setup**:
+1. **Open your Terminal**: Navigate to the root folder of this project.
+2. **Initialize Git**:
+   ```bash
+   git init
+   ```
+3. **Commit Your Code**:
+   ```bash
+   git add .
+   git commit -m "Initial project setup"
+   ```
+4. **Push to GitHub**:
+   - Create a new **private** repository on GitHub.
+   - Run the commands provided by GitHub to "push an existing repository from the command line":
+   ```bash
+   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+   git branch -M main
+   git push -u origin main
+   ```
+5. **Firebase App Hosting**:
    - Go to the [Firebase Console](https://console.firebase.google.com/).
    - Select your project.
    - Go to **Build > App Hosting**.
    - Click **Get Started** and select **Connect to GitHub**.
-   - Authorize Firebase and select your repository.
-   - Follow the prompts to finish the setup.
+   - Select your repository and follow the setup wizard.
 
-Once connected, any changes pushed to your primary branch will automatically trigger a new build and deployment.
+Once connected, every `git push` will automatically update your live site.
