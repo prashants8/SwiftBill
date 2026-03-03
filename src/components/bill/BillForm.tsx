@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus, Trash2, Save, Printer, RotateCcw, ShieldCheck, CreditCard } from 'lucide-react';
+import { Plus, Trash2, Save, RotateCcw, ShieldCheck, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { convertAmountToWords } from '@/ai/flows/amount-to-words-conversion';
-import { Bill, FreightDetail } from '@/types/bill';
+import { Bill } from '@/types/bill';
 import { mockDb } from '@/lib/mock-db';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -25,8 +25,8 @@ const freightDetailSchema = z.object({
   particulars: z.string().min(1, "Particulars are required"),
   fromLocation: z.string().min(1, "From is required"),
   toLocation: z.string().min(1, "To is required"),
-  weight: z.number().min(0),
-  rate: z.number().min(0),
+  weight: z.string(),
+  rate: z.string(),
   freightAmount: z.number().min(0),
 });
 
@@ -67,7 +67,7 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
     } : {
       billNumber: `BILL-${Date.now().toString().slice(-6)}`,
       billDate: new Date().toISOString().split('T')[0],
-      freightDetails: [{ lrNumber: '', lrDate: new Date().toISOString().split('T')[0], lorryNumber: '', particulars: '', fromLocation: '', toLocation: '', weight: 0, rate: 0, freightAmount: 0 }],
+      freightDetails: [{ lrNumber: '', lrDate: new Date().toISOString().split('T')[0], lorryNumber: '', particulars: '', fromLocation: '', toLocation: '', weight: '', rate: '', freightAmount: 0 }],
       charges: { transitInsurance: 0, otherCharges: 0 },
       panNo: '',
       gstin: '',
@@ -83,10 +83,11 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
   const watchedCharges = watch("charges");
 
   useEffect(() => {
+    // Grand Total = Total Freight + Transit Insurance (Other Charges excluded from Grand Total as requested)
     const freightTotal = watchedFreightDetails.reduce((sum, item) => sum + (Number(item.freightAmount) || 0), 0);
-    const total = freightTotal + (Number(watchedCharges.transitInsurance) || 0) + (Number(watchedCharges.otherCharges) || 0);
+    const total = freightTotal + (Number(watchedCharges.transitInsurance) || 0);
     setTotalAmount(total);
-  }, [watchedFreightDetails, watchedCharges]);
+  }, [watchedFreightDetails, watchedCharges.transitInsurance]);
 
   useEffect(() => {
     if (totalAmount > 0) {
@@ -123,14 +124,6 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
       router.push(`/bills/${newBill.id}`);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
-    }
-  };
-
-  const calculateRowFreight = (index: number) => {
-    const weight = getValues(`freightDetails.${index}.weight`);
-    const rate = getValues(`freightDetails.${index}.rate`);
-    if (weight !== undefined && rate !== undefined) {
-      setValue(`freightDetails.${index}.freightAmount`, Number((weight * rate).toFixed(2)));
     }
   };
 
@@ -207,7 +200,7 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
             <CardTitle>Freight Details</CardTitle>
             <CardDescription>Tabular lorry and consignment information</CardDescription>
           </div>
-          <Button type="button" size="sm" onClick={() => append({ lrNumber: '', lrDate: new Date().toISOString().split('T')[0], lorryNumber: '', particulars: '', fromLocation: '', toLocation: '', weight: 0, rate: 0, freightAmount: 0 })}>
+          <Button type="button" size="sm" onClick={() => append({ lrNumber: '', lrDate: new Date().toISOString().split('T')[0], lorryNumber: '', particulars: '', fromLocation: '', toLocation: '', weight: '', rate: '', freightAmount: 0 })}>
             <Plus className="w-4 h-4 mr-2" /> Add Row
           </Button>
         </CardHeader>
@@ -221,7 +214,7 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
                   <th className="text-left py-2 pr-4">Particulars</th>
                   <th className="text-left py-2 pr-4">From/To</th>
                   <th className="text-right py-2 pr-4">Wt/Rate</th>
-                  <th className="text-right py-2 pr-4">Freight</th>
+                  <th className="text-right py-2 pr-4">Freight Charge</th>
                   <th className="w-10"></th>
                 </tr>
               </thead>
@@ -243,8 +236,8 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
                       <Input placeholder="To" {...register(`freightDetails.${index}.toLocation`)} />
                     </td>
                     <td className="py-3 pr-4 space-y-2">
-                      <Input type="number" step="0.01" placeholder="Wt" {...register(`freightDetails.${index}.weight`, { valueAsNumber: true, onChange: () => calculateRowFreight(index) })} />
-                      <Input type="number" step="0.01" placeholder="Rate" {...register(`freightDetails.${index}.rate`, { valueAsNumber: true, onChange: () => calculateRowFreight(index) })} />
+                      <Input placeholder="e.g. 10 MT" {...register(`freightDetails.${index}.weight`)} />
+                      <Input placeholder="e.g. Fixed" {...register(`freightDetails.${index}.rate`)} />
                     </td>
                     <td className="py-3 pr-4 space-y-2">
                       <Input type="number" step="0.01" placeholder="Amount" {...register(`freightDetails.${index}.freightAmount`, { valueAsNumber: true })} />
@@ -262,7 +255,7 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
                                 <ShieldCheck className="w-3 h-3 mr-1" /> Ins.
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Add this row's freight to Transit Insurance</TooltipContent>
+                            <TooltipContent>Add this row's charge to Transit Insurance</TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -276,7 +269,7 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
                                 <CreditCard className="w-3 h-3 mr-1" /> Other
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Add this row's freight to Other Charges</TooltipContent>
+                            <TooltipContent>Add this row's charge to Other Charges</TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </div>
@@ -324,12 +317,15 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
               <Input id="transitInsurance" type="number" step="0.01" className="text-right font-bold" {...register("charges.transitInsurance", { valueAsNumber: true })} />
             </div>
             <div className="grid grid-cols-2 items-center gap-4">
-              <Label htmlFor="otherCharges">Other Charges</Label>
+              <Label htmlFor="otherCharges">Other Charges (Excl. from Total)</Label>
               <Input id="otherCharges" type="number" step="0.01" className="text-right font-bold" {...register("charges.otherCharges", { valueAsNumber: true })} />
             </div>
             <Separator />
             <div className="flex justify-between items-center text-xl font-bold text-primary">
-              <span>Grand Total</span>
+              <div className="flex flex-col">
+                <span>Grand Total</span>
+                <span className="text-[10px] text-muted-foreground font-normal">(Freight + Insurance)</span>
+              </div>
               <span>₹ {totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
             <div className="text-sm mt-4 italic font-medium p-3 bg-white rounded border border-dashed border-primary/20">

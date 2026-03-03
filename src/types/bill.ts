@@ -6,8 +6,8 @@ export interface FreightDetail {
   particulars: string;
   fromLocation: string;
   toLocation: string;
-  weight: number;
-  rate: number;
+  weight: string;
+  rate: string;
   freightAmount: number;
 }
 

@@ -14,6 +14,8 @@ export function BillDocument({ bill }: { bill: Bill }) {
     window.print();
   };
 
+  const totalFreight = bill.freightDetails.reduce((sum, item) => sum + (item.freightAmount || 0), 0);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center no-print bg-white p-4 rounded-lg shadow-sm border">
@@ -94,8 +96,8 @@ export function BillDocument({ bill }: { bill: Bill }) {
                   <td className="border-r-2 border-black px-1 py-2">{detail.particulars}</td>
                   <td className="border-r-2 border-black px-1 py-2 text-center uppercase">{detail.fromLocation}</td>
                   <td className="border-r-2 border-black px-1 py-2 text-center uppercase">{detail.toLocation}</td>
-                  <td className="border-r-2 border-black px-1 py-2 text-right">{detail.weight}</td>
-                  <td className="border-r-2 border-black px-1 py-2 text-right">{detail.rate}</td>
+                  <td className="border-r-2 border-black px-1 py-2 text-center">{detail.weight}</td>
+                  <td className="border-r-2 border-black px-1 py-2 text-center">{detail.rate}</td>
                   <td className="px-1 py-2 text-right font-bold">{detail.freightAmount.toFixed(2)}</td>
                 </tr>
               ))}
@@ -137,14 +139,14 @@ export function BillDocument({ bill }: { bill: Bill }) {
           <div className="w-64 border-l-2 border-black">
             <div className="border-b border-black flex justify-between p-2 text-xs">
               <span className="font-medium">Total Freight</span>
-              <span className="font-bold">{(bill.totalAmount - bill.charges.transitInsurance - bill.charges.otherCharges).toFixed(2)}</span>
+              <span className="font-bold">{totalFreight.toFixed(2)}</span>
             </div>
             <div className="border-b border-black flex justify-between p-2 text-xs">
               <span className="font-medium">Transit Insurance</span>
               <span className="font-bold">{bill.charges.transitInsurance.toFixed(2)}</span>
             </div>
-            <div className="border-b border-black flex justify-between p-2 text-xs">
-              <span className="font-medium">Other Charges</span>
+            <div className="border-b border-black flex justify-between p-2 text-xs text-muted-foreground italic">
+              <span className="font-medium">Other Charges*</span>
               <span className="font-bold">{bill.charges.otherCharges.toFixed(2)}</span>
             </div>
             <div className="flex justify-between p-2 text-sm font-black bg-gray-100">
