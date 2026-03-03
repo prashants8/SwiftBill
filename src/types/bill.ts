@@ -17,6 +17,9 @@ export interface AdditionalCharges {
 
 export interface Bill {
   id: string;
+  // Owner of this bill (local auth user id). Bills created
+  // before auth was added may not have this set.
+  ownerId?: string;
   billNumber: string;
   billDate: string;
   customerName: string;

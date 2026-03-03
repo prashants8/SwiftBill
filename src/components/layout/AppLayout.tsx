@@ -2,18 +2,15 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   Plus, 
   Search, 
   FileText, 
   LayoutDashboard,
-  Truck,
   Settings,
-  Menu
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { 
   Sidebar, 
   SidebarContent, 
@@ -25,6 +22,7 @@ import {
   SidebarTrigger,
   SidebarInset
 } from '@/components/ui/sidebar';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 const navItems = [
   { label: 'New Bill', icon: Plus, href: '/bills/new' },
@@ -35,6 +33,29 @@ const navItems = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, profile, loading } = useAuth();
+  const isAuthRoute = pathname === '/login' || pathname === '/signup';
+
+  React.useEffect(() => {
+    if (isAuthRoute) return;
+    if (loading) return;
+    if (!user) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [isAuthRoute, loading, pathname, router, user]);
+
+  if (isAuthRoute) {
+    return <div className="min-h-screen bg-background">{children}</div>;
+  }
+
+  if (loading) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <SidebarProvider defaultOpen>
@@ -47,7 +68,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   ARC
                 </span>
               </div>
-              <span className="font-bold text-lg text-primary tracking-tight">SwiftBill</span>
+              <div className="min-w-0 leading-tight">
+                <div className="font-bold text-lg text-primary tracking-tight">SwiftBill</div>
+                {profile?.companyName ? (
+                  <div className="text-xs text-muted-foreground truncate">
+                    {profile.companyName}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </SidebarHeader>
           <SidebarContent className="p-2">
