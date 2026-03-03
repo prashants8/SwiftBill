@@ -35,7 +35,7 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome to SwiftBill Freight Management System.</p>
+          <p className="text-muted-foreground">Welcome to SwiftBill Management System.</p>
         </div>
         <div className="flex gap-2">
           <Button asChild>
@@ -69,7 +69,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹ {stats.totalRevenue.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-muted-foreground">Total freight earnings</p>
+            <p className="text-xs text-muted-foreground">Total earnings</p>
           </CardContent>
         </Card>
         <Card>
@@ -87,7 +87,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Recent Freight Bills</CardTitle>
+            <CardTitle>Recent Bills</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

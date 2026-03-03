@@ -4,8 +4,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'SwiftBill Freight - ARC Billing System',
-  description: 'Freight Bill Entry & Retrieval System for Anjaneya Road Carriers',
+  title: 'SwiftBill - ARC Billing System',
+  description: 'Bill Entry & Retrieval System for Anjaneya Road Carriers',
 };
 
 export default function RootLayout({

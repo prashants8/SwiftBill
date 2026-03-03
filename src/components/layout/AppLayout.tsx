@@ -42,10 +42,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <Sidebar className="no-print">
           <SidebarHeader className="p-4 border-b">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <Truck className="text-white w-5 h-5" />
+              <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center">
+                <span className="text-white text-xs font-extrabold tracking-[0.08em]">
+                  ARC
+                </span>
               </div>
-              <span className="font-bold text-lg text-primary tracking-tight">SwiftBill Freight</span>
+              <span className="font-bold text-lg text-primary tracking-tight">SwiftBill</span>
             </div>
           </SidebarHeader>
           <SidebarContent className="p-2">
@@ -84,7 +86,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <header className="no-print h-14 border-b flex items-center px-6 sticky top-0 bg-background/80 backdrop-blur-md z-10">
             <SidebarTrigger className="mr-4" />
             <h1 className="font-semibold text-lg">
-              {navItems.find(item => item.href === pathname)?.label || 'SwiftBill Freight'}
+              {navItems.find(item => item.href === pathname)?.label || 'SwiftBill'}
             </h1>
           </header>
           <main className="flex-1 p-6 overflow-auto">
