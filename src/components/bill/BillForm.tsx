@@ -25,8 +25,8 @@ const freightDetailSchema = z.object({
   particulars: z.string().min(1, "Particulars are required"),
   fromLocation: z.string().min(1, "From is required"),
   toLocation: z.string().min(1, "To is required"),
-  weight: z.string(),
-  rate: z.string(),
+  weight: z.string().default(''),
+  rate: z.string().default(''),
   freightAmount: z.number().min(0),
 });
 
@@ -83,7 +83,7 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
   const watchedCharges = watch("charges");
 
   useEffect(() => {
-    // Grand Total = Total Freight + Transit Insurance (Other Charges excluded from Grand Total as requested)
+    // Grand Total = Total Freight + Transit Insurance (Other Charges excluded from Grand Total)
     const freightTotal = watchedFreightDetails.reduce((sum, item) => sum + (Number(item.freightAmount) || 0), 0);
     const total = freightTotal + (Number(watchedCharges.transitInsurance) || 0);
     setTotalAmount(total);

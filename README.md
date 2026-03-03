@@ -9,15 +9,16 @@ This is a Next.js application for managing ARC freight bills, integrated with Ge
 - **Search & Retrieval**: Quick lookup by Bill Number.
 
 ## GitHub Connection & Deployment
+
 To connect this project to GitHub and enable automatic deployments:
 
 ### 1. Open your Terminal
-- **In VS Code (Recommended)**: Press `Ctrl + \`` (backtick) or go to **Terminal > New Terminal**. The terminal usually opens in the correct folder automatically.
+- **In VS Code (Recommended)**: Press `Ctrl + \`` (backtick) or go to **Terminal > New Terminal**.
 - **On Windows**: Press `Win + R`, type `cmd`, and press Enter.
 - **On Mac**: Press `Cmd + Space`, type `Terminal`, and press Enter.
 
-### 2. Navigate to Project Folder (If not already there)
-If your terminal isn't in the project folder:
+### 2. Navigate to Project Folder
+If your terminal isn't already in the project folder:
 1. Type `cd ` (with a space).
 2. Drag your project folder from your computer into the terminal window.
 3. Press **Enter**.
@@ -33,11 +34,19 @@ git init
 git add .
 git commit -m "Initial project setup"
 
-# Push to GitHub
-# (Create a new private repository on GitHub first, then copy the URL)
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+# Connect to GitHub
+# (Replace the URL with your actual repo URL)
+git remote add origin https://github.com/prashants8/SwiftBill.git
 git branch -M main
+
+# Push to GitHub
 git push -u origin main
+```
+
+### ❌ Troubleshooting: "failed to push some refs"
+If you see an error saying "failed to push some refs", it's because GitHub has files (like a README) that you don't have locally. To fix it and overwrite the remote, run:
+```bash
+git push -u origin main --force
 ```
 
 ### 4. Firebase App Hosting
@@ -46,5 +55,3 @@ git push -u origin main
 - Go to **Build > App Hosting**.
 - Click **Get Started** and select **Connect to GitHub**.
 - Select your repository and follow the setup wizard.
-
-Once connected, every `git push` will automatically update your live site.

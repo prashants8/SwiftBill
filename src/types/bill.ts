@@ -1,14 +1,13 @@
 export interface FreightDetail {
-  id: string;
   lrNumber: string;
   lrDate: string;
   lorryNumber: string;
   particulars: string;
   fromLocation: string;
   toLocation: string;
-  weight: string;
-  rate: string;
-  freightAmount: number;
+  weight: string; // Flexible text (e.g., "10 MT")
+  rate: string;   // Flexible text (e.g., "Fixed" or "1500")
+  freightAmount: number; // The actual charge
 }
 
 export interface AdditionalCharges {
@@ -24,7 +23,7 @@ export interface Bill {
   customerAddress: string;
   freightDetails: FreightDetail[];
   charges: AdditionalCharges;
-  totalAmount: number;
+  totalAmount: number; // Freight + Insurance
   amountInWords: string;
   panNo: string;
   gstin: string;
