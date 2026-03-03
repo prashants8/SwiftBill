@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Eye, Filter, Download, MoreHorizontal, Truck } from 'lucide-react';
+import { Plus, Search, Eye, Filter, Download, MoreHorizontal, Truck, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Bill } from '@/types/bill';
@@ -11,16 +11,31 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AllBillsPage() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [search, setSearch] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
-    setBills(mockDb.getAll().reverse());
+    loadBills();
   }, []);
+
+  const loadBills = () => {
+    setBills(mockDb.getAll().reverse());
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this record?')) {
+      mockDb.delete(id);
+      toast({ title: "Deleted", description: "Bill record removed successfully" });
+      loadBills();
+    }
+  };
 
   const filteredBills = bills.filter(bill => 
     bill.billNumber.toLowerCase().includes(search.toLowerCase()) ||
@@ -109,16 +124,21 @@ export default function AllBillsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Link href={`/bills/${bill.id}`}>Print Preview</Link>
+                              <Link href={`/bills/${bill.id}`} className="flex items-center">
+                                <Eye className="w-4 h-4 mr-2" /> View/Print
+                              </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
-                              window.open(`/bills/${bill.id}`, '_blank');
-                              setTimeout(() => window.print(), 500);
-                            }}>
-                              Direct Print
+                            <DropdownMenuItem asChild>
+                              <Link href={`/bills/${bill.id}/edit`} className="flex items-center">
+                                <Edit2 className="w-4 h-4 mr-2" /> Edit Record
+                              </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
-                              Delete Record
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive flex items-center"
+                              onClick={() => handleDelete(bill.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete Record
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

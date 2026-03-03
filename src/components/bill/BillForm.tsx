@@ -4,13 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus, Trash2, Save, Printer, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Save, Printer, RotateCcw, ShieldCheck, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { convertAmountToWords } from '@/ai/flows/amount-to-words-conversion';
 import { Bill, FreightDetail } from '@/types/bill';
 import { mockDb } from '@/lib/mock-db';
@@ -52,7 +53,7 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
   const [amountInWords, setAmountInWords] = useState('');
   const [isConverting, setIsConverting] = useState(false);
 
-  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
+  const { register, control, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(billSchema),
     defaultValues: initialData ? {
       billNumber: initialData.billNumber,
@@ -118,7 +119,7 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
         updatedAt: new Date().toISOString(),
       };
       mockDb.save(newBill);
-      toast({ title: "Success", description: "Bill saved successfully" });
+      toast({ title: "Success", description: "Bill record updated successfully" });
       router.push(`/bills/${newBill.id}`);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
@@ -126,18 +127,30 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
   };
 
   const calculateRowFreight = (index: number) => {
-    const weight = watch(`freightDetails.${index}.weight`);
-    const rate = watch(`freightDetails.${index}.rate`);
-    if (weight && rate) {
+    const weight = getValues(`freightDetails.${index}.weight`);
+    const rate = getValues(`freightDetails.${index}.rate`);
+    if (weight !== undefined && rate !== undefined) {
       setValue(`freightDetails.${index}.freightAmount`, Number((weight * rate).toFixed(2)));
     }
+  };
+
+  const addToInsurance = (amount: number) => {
+    const current = getValues("charges.transitInsurance") || 0;
+    setValue("charges.transitInsurance", Number((current + amount).toFixed(2)));
+    toast({ title: "Added", description: `₹${amount} added to Transit Insurance` });
+  };
+
+  const addToOtherCharges = (amount: number) => {
+    const current = getValues("charges.otherCharges") || 0;
+    setValue("charges.otherCharges", Number((current + amount).toFixed(2)));
+    toast({ title: "Added", description: `₹${amount} added to Other Charges` });
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 max-w-5xl mx-auto pb-20">
       <div className="flex justify-between items-center no-print">
         <div>
-          <h2 className="text-2xl font-bold text-primary">Freight Bill Entry</h2>
+          <h2 className="text-2xl font-bold text-primary">{initialData ? 'Edit Freight Bill' : 'New Freight Bill Entry'}</h2>
           <p className="text-muted-foreground">Fill in the details matching the physical ARC bill format.</p>
         </div>
         <div className="flex gap-2">
@@ -145,7 +158,7 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
             <RotateCcw className="w-4 h-4 mr-2" /> Cancel
           </Button>
           <Button type="submit">
-            <Save className="w-4 h-4 mr-2" /> Save Bill
+            <Save className="w-4 h-4 mr-2" /> {initialData ? 'Update Bill' : 'Save Bill'}
           </Button>
         </div>
       </div>
@@ -233,8 +246,40 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
                       <Input type="number" step="0.01" placeholder="Wt" {...register(`freightDetails.${index}.weight`, { valueAsNumber: true, onChange: () => calculateRowFreight(index) })} />
                       <Input type="number" step="0.01" placeholder="Rate" {...register(`freightDetails.${index}.rate`, { valueAsNumber: true, onChange: () => calculateRowFreight(index) })} />
                     </td>
-                    <td className="py-3 pr-4">
+                    <td className="py-3 pr-4 space-y-2">
                       <Input type="number" step="0.01" placeholder="Amount" {...register(`freightDetails.${index}.freightAmount`, { valueAsNumber: true })} />
+                      <div className="flex gap-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-7 px-2 flex-1 text-[10px]"
+                                onClick={() => addToInsurance(getValues(`freightDetails.${index}.freightAmount`))}
+                              >
+                                <ShieldCheck className="w-3 h-3 mr-1" /> Ins.
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Add this row's freight to Transit Insurance</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-7 px-2 flex-1 text-[10px]"
+                                onClick={() => addToOtherCharges(getValues(`freightDetails.${index}.freightAmount`))}
+                              >
+                                <CreditCard className="w-3 h-3 mr-1" /> Other
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Add this row's freight to Other Charges</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </td>
                     <td className="py-3">
                       {fields.length > 1 && (
@@ -276,18 +321,18 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 items-center gap-4">
               <Label htmlFor="transitInsurance">Transit Insurance</Label>
-              <Input id="transitInsurance" type="number" step="0.01" className="text-right" {...register("charges.transitInsurance", { valueAsNumber: true })} />
+              <Input id="transitInsurance" type="number" step="0.01" className="text-right font-bold" {...register("charges.transitInsurance", { valueAsNumber: true })} />
             </div>
             <div className="grid grid-cols-2 items-center gap-4">
               <Label htmlFor="otherCharges">Other Charges</Label>
-              <Input id="otherCharges" type="number" step="0.01" className="text-right" {...register("charges.otherCharges", { valueAsNumber: true })} />
+              <Input id="otherCharges" type="number" step="0.01" className="text-right font-bold" {...register("charges.otherCharges", { valueAsNumber: true })} />
             </div>
             <Separator />
             <div className="flex justify-between items-center text-xl font-bold text-primary">
               <span>Grand Total</span>
               <span>₹ {totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
-            <div className="text-sm mt-4 italic font-medium">
+            <div className="text-sm mt-4 italic font-medium p-3 bg-white rounded border border-dashed border-primary/20">
               {isConverting ? "Converting to words..." : amountInWords && `Amount in words: ${amountInWords}`}
             </div>
           </CardContent>
