@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bill } from '@/types/bill';
 import { mockDb } from '@/lib/mock-db';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [recentBills, setRecentBills] = useState<Bill[]>([]);
   const [stats, setStats] = useState({
     totalBills: 0,
@@ -35,7 +37,9 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome to SwiftBill Management System.</p>
+          <p className="text-muted-foreground">
+            Welcome to SwiftBill Management System{user?.email ? `, ${user.email}` : ""}.
+          </p>
         </div>
         <div className="flex gap-2">
           <Button asChild>

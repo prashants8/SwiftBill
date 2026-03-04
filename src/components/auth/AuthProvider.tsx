@@ -2,10 +2,8 @@
 
 import React from "react"
 
-type User = {
-  id: string
-  email: string
-}
+import type { User } from "@supabase/supabase-js"
+import { supabase } from "@/lib/supabaseClient"
 
 export type UserProfile = {
   uid: string
@@ -27,49 +25,42 @@ type AuthContextValue = {
 const AuthContext = React.createContext<AuthContextValue | null>(null)
 
 async function upsertProfile(args: { uid: string; email: string; companyName: string }) {
-  const usersJson = window.localStorage.getItem("swiftbill_users")
-  const users: Array<{
-    id: string
-    email: string
-    password: string
-    companyName: string
-  }> = usersJson ? JSON.parse(usersJson) : []
+  const { error } = await supabase
+    .from("profiles")
+    .upsert(
+      {
+        id: args.uid,
+        email: args.email,
+        company_name: args.companyName,
+      },
+      { onConflict: "id" }
+    )
 
-  const existingIndex = users.findIndex((u) => u.id === args.uid)
-  if (existingIndex >= 0) {
-    users[existingIndex] = {
-      ...users[existingIndex],
-      email: args.email,
-      companyName: args.companyName,
-    }
-  } else {
-    users.push({
-      id: args.uid,
-      email: args.email,
-      password: "",
-      companyName: args.companyName,
-    })
+  if (error) {
+    console.error("Failed to upsert profile", error)
   }
-
-  window.localStorage.setItem("swiftbill_users", JSON.stringify(users))
 }
 
 async function readProfile(uid: string) {
-  const usersJson = window.localStorage.getItem("swiftbill_users")
-  const users: Array<{
-    id: string
-    email: string
-    password: string
-    companyName: string
-  }> = usersJson ? JSON.parse(usersJson) : []
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, email, company_name, created_at, updated_at")
+    .eq("id", uid)
+    .maybeSingle()
 
-  const match = users.find((u) => u.id === uid)
-  if (!match) return null
+  if (error) {
+    console.error("Failed to read profile", error)
+    return null
+  }
+
+  if (!data) return null
 
   return {
-    uid: match.id,
-    email: match.email,
-    companyName: match.companyName,
+    uid: data.id,
+    email: data.email,
+    companyName: data.company_name,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
   } as UserProfile
 }
 
@@ -79,76 +70,84 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
-    const usersJson = window.localStorage.getItem("swiftbill_users")
-    const currentId = window.localStorage.getItem("swiftbill_current_user")
+    let active = true
 
-    if (!usersJson || !currentId) {
-      setUser(null)
-      setProfile(null)
-      setLoading(false)
-      return
-    }
+    async function boot() {
+      const { data, error } = await supabase.auth.getSession()
+      if (!active) return
 
-    try {
-      const users: Array<{
-        id: string
-        email: string
-        password: string
-        companyName: string
-      }> = JSON.parse(usersJson)
-
-      const u = users.find((x) => x.id === currentId)
-      if (!u) {
+      if (error) {
+        console.error("Error getting Supabase session", error)
         setUser(null)
         setProfile(null)
-      } else {
-        setUser({ id: u.id, email: u.email })
-        setProfile({
-          uid: u.id,
-          email: u.email,
-          companyName: u.companyName,
-        })
+        setLoading(false)
+        return
       }
-    } catch {
-      setUser(null)
-      setProfile(null)
-    } finally {
+
+      const currentUser = data.session?.user ?? null
+      setUser(currentUser)
+
+      if (currentUser) {
+        window.localStorage.setItem("swiftbill_current_user", currentUser.id)
+        const p = await readProfile(currentUser.id)
+        setProfile(p)
+      } else {
+        window.localStorage.removeItem("swiftbill_current_user")
+        setProfile(null)
+      }
+
       setLoading(false)
+    }
+
+    boot()
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null
+      setUser(currentUser)
+
+      if (currentUser) {
+        window.localStorage.setItem("swiftbill_current_user", currentUser.id)
+        const p = await readProfile(currentUser.id)
+        setProfile(p)
+      } else {
+        window.localStorage.removeItem("swiftbill_current_user")
+        setProfile(null)
+      }
+    })
+
+    return () => {
+      active = false
+      subscription.subscription.unsubscribe()
     }
   }, [])
 
   const signUp = React.useCallback(
     async (args: { email: string; password: string; companyName: string }) => {
-      const usersJson = window.localStorage.getItem("swiftbill_users")
-      const users: Array<{
-        id: string
-        email: string
-        password: string
-        companyName: string
-      }> = usersJson ? JSON.parse(usersJson) : []
+      const { data, error } = await supabase.auth.signUp({
+        email: args.email,
+        password: args.password,
+      })
 
-      if (users.some((u) => u.email.toLowerCase() === args.email.toLowerCase())) {
-        throw new Error("An account with this email already exists.")
+      if (error) {
+        throw error
       }
 
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+      const createdUser = data.user
+      if (!createdUser) {
+        // In email-confirmation flows there might be no user/session yet.
+        return
+      }
 
-      const nextUsers = [
-        ...users,
-        {
-          id,
-          email: args.email,
-          password: args.password,
-          companyName: args.companyName,
-        },
-      ]
+      await upsertProfile({
+        uid: createdUser.id,
+        email: args.email,
+        companyName: args.companyName,
+      })
 
-      window.localStorage.setItem("swiftbill_users", JSON.stringify(nextUsers))
-      window.localStorage.setItem("swiftbill_current_user", id)
-
-      setUser({ id, email: args.email })
+      window.localStorage.setItem("swiftbill_current_user", createdUser.id)
+      setUser(createdUser)
       setProfile({
-        uid: id,
+        uid: createdUser.id,
         email: args.email,
         companyName: args.companyName,
       })
@@ -157,34 +156,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 
   const logIn = React.useCallback(async (args: { email: string; password: string }) => {
-    const usersJson = window.localStorage.getItem("swiftbill_users")
-    const users: Array<{
-      id: string
-      email: string
-      password: string
-      companyName: string
-    }> = usersJson ? JSON.parse(usersJson) : []
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: args.email,
+      password: args.password,
+    })
 
-    const match = users.find(
-      (u) =>
-        u.email.toLowerCase() === args.email.toLowerCase() && u.password === args.password
-    )
-
-    if (!match) {
-      throw new Error("Invalid email or password.")
+    if (error) {
+      throw error
     }
 
-    window.localStorage.setItem("swiftbill_current_user", match.id)
+    const currentUser = data.user
+    if (!currentUser) return
 
-    setUser({ id: match.id, email: match.email })
-    setProfile({
-      uid: match.id,
-      email: match.email,
-      companyName: match.companyName,
-    })
+    window.localStorage.setItem("swiftbill_current_user", currentUser.id)
+    setUser(currentUser)
+    const p = await readProfile(currentUser.id)
+    setProfile(
+      p ?? {
+        uid: currentUser.id,
+        email: currentUser.email ?? args.email,
+        companyName: "",
+      }
+    )
   }, [])
 
   const logOut = React.useCallback(async () => {
+    await supabase.auth.signOut()
     window.localStorage.removeItem("swiftbill_current_user")
     setUser(null)
     setProfile(null)

@@ -28,7 +28,7 @@ const navItems = [
   { label: 'New Bill', icon: Plus, href: '/bills/new' },
   { label: 'Search Bill', icon: Search, href: '/bills/search' },
   { label: 'All Bills', icon: FileText, href: '/bills' },
-  { label: 'Dashboard', icon: LayoutDashboard, href: '/' },
+  { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
