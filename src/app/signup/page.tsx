@@ -37,9 +37,15 @@ function SignupContent() {
       await signUp(values)
       router.replace(next)
     } catch (e) {
+      const message = e instanceof Error ? e.message : "Please try again."
+      const isRateLimit =
+        /rate limit|too many requests|email.*limit/i.test(message)
+
       toast({
         title: "Signup failed",
-        description: e instanceof Error ? e.message : "Please try again.",
+        description: isRateLimit
+          ? "Too many signup emails were sent. Wait 15–60 minutes and try again, or log in if you already have an account."
+          : message,
         variant: "destructive",
       })
     }

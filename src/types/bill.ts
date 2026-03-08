@@ -12,6 +12,8 @@ export interface FreightDetail {
 
 export interface AdditionalCharges {
   transitInsurance: number;
+  /** When true, display "NA" for transit insurance and exclude from grand total (use 0). */
+  transitInsuranceNA?: boolean;
   otherCharges: number;
 }
 

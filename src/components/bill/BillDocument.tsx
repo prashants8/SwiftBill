@@ -15,6 +15,12 @@ export function BillDocument({ bill }: { bill: Bill }) {
   };
 
   const totalFreight = bill.freightDetails.reduce((sum, item) => sum + (item.freightAmount || 0), 0);
+  const isInsuranceNA = Boolean(bill.charges?.transitInsuranceNA);
+  const transitInsuranceValue = isInsuranceNA ? 0 : (Number(bill.charges?.transitInsurance) || 0);
+  const grandTotal =
+    bill.totalAmount > 0
+      ? bill.totalAmount
+      : totalFreight + transitInsuranceValue;
 
   return (
     <div className="space-y-6">
@@ -143,7 +149,9 @@ export function BillDocument({ bill }: { bill: Bill }) {
             </div>
             <div className="border-b border-black flex justify-between p-2 text-xs">
               <span className="font-medium">Transit Insurance</span>
-              <span className="font-bold">{bill.charges.transitInsurance.toFixed(2)}</span>
+              <span className="font-bold">
+                {isInsuranceNA ? "NA" : (bill.charges?.transitInsurance ?? 0).toFixed(2)}
+              </span>
             </div>
             <div className="border-b border-black flex justify-between p-2 text-xs text-muted-foreground italic">
               <span className="font-medium">Other Charges*</span>
@@ -151,7 +159,7 @@ export function BillDocument({ bill }: { bill: Bill }) {
             </div>
             <div className="flex justify-between p-2 text-sm font-black bg-gray-100">
               <span className="uppercase">Grand Total</span>
-              <span className="text-primary underline decoration-double underline-offset-4">₹ {bill.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <span className="text-primary underline decoration-double underline-offset-4">₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>

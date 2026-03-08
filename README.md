@@ -49,7 +49,16 @@ If you see an error saying "failed to push some refs", it's because GitHub has f
 git push -u origin main --force
 ```
 
-### 4. Firebase App Hosting
+### 4. Supabase email confirmation (optional)
+If you use Supabase auth and email confirmation, add your app URLs in the Supabase dashboard so confirmation links open correctly (and don’t point to localhost):
+
+- **Authentication → URL Configuration**
+- **Site URL**: Your production URL, e.g. `https://swift-bill-ic4p.vercel.app`
+- **Redirect URLs**: Add `https://swift-bill-ic4p.vercel.app/auth/callback` (and `http://localhost:3000/auth/callback` for local dev)
+
+New signups will use the current site origin for the confirmation link. If a link has expired, users can go to **Login → Get help with confirmation** (or `/auth/error`) to request a new one.
+
+### 5. Firebase App Hosting
 - Go to the [Firebase Console](https://console.firebase.google.com/).
 - Select your project.
 - Go to **Build > App Hosting**.

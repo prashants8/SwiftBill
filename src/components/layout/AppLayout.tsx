@@ -35,7 +35,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, profile, loading } = useAuth();
-  const isAuthRoute = pathname === '/login' || pathname === '/signup';
+  const isAuthRoute =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/auth/callback" ||
+    pathname.startsWith("/auth/error");
 
   React.useEffect(() => {
     if (isAuthRoute) return;

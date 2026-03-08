@@ -38,6 +38,7 @@ const billSchema = z.object({
   freightDetails: z.array(freightDetailSchema),
   charges: z.object({
     transitInsurance: z.number().min(0),
+    transitInsuranceNA: z.boolean().optional(),
     otherCharges: z.number().min(0),
   }),
   panNo: z.string().default(''),
@@ -67,7 +68,7 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
       billNumber: `BILL-${Date.now().toString().slice(-6)}`,
       billDate: new Date().toISOString().split('T')[0],
       freightDetails: [{ lrNumber: '', lrDate: new Date().toISOString().split('T')[0], lorryNumber: '', particulars: '', fromLocation: '', toLocation: '', weight: '', rate: '', freightAmount: 0 }],
-      charges: { transitInsurance: 0, otherCharges: 0 },
+      charges: { transitInsurance: 0, transitInsuranceNA: false, otherCharges: 0 },
       panNo: '',
       gstin: '',
     }
@@ -81,14 +82,21 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
   const watchedFreightDetails = watch("freightDetails") ?? [];
   const watchedCharges = watch("charges");
 
-  // Grand Total = Total Freight + Transit Insurance (Other Charges excluded from Grand Total)
+  React.useEffect(() => {
+    if (watchedCharges?.transitInsuranceNA) {
+      setValue("charges.transitInsurance", 0);
+    }
+  }, [watchedCharges?.transitInsuranceNA, setValue]);
+
+  // Grand Total = Total Freight + Transit Insurance (0 when NA; Other Charges excluded)
   // Derived during render so it always stays in sync with form values
   const totalAmount = useMemo(() => {
     const freightTotal = (Array.isArray(watchedFreightDetails) ? watchedFreightDetails : []).reduce(
       (sum, item) => sum + (Number(item?.freightAmount) || 0),
       0
     );
-    const insurance = Number(watchedCharges?.transitInsurance) || 0;
+    const isNA = watchedCharges?.transitInsuranceNA === true;
+    const insurance = isNA ? 0 : (Number(watchedCharges?.transitInsurance) || 0);
     return freightTotal + insurance;
   }, [watchedFreightDetails, watchedCharges]);
 
@@ -317,7 +325,24 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 items-center gap-4">
               <Label htmlFor="transitInsurance">Transit Insurance</Label>
-              <Input id="transitInsurance" type="number" step="0.01" className="text-right font-bold" {...register("charges.transitInsurance", { valueAsNumber: true })} />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="transitInsurance"
+                  type="number"
+                  step="0.01"
+                  className="text-right font-bold"
+                  disabled={watch("charges.transitInsuranceNA") === true}
+                  {...register("charges.transitInsurance", { valueAsNumber: true })}
+                />
+                <label className="flex items-center gap-2 text-sm font-medium whitespace-nowrap cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="rounded border-input"
+                    {...register("charges.transitInsuranceNA")}
+                  />
+                  NA
+                </label>
+              </div>
             </div>
             <div className="grid grid-cols-2 items-center gap-4">
               <Label htmlFor="otherCharges">Other Charges (Excl. from Total)</Label>
