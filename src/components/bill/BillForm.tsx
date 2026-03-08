@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -49,7 +49,6 @@ type FormValues = z.infer<typeof billSchema>;
 export function BillForm({ initialData }: { initialData?: Bill }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [totalAmount, setTotalAmount] = useState(0);
   const [amountInWords, setAmountInWords] = useState('');
   const [isConverting, setIsConverting] = useState(false);
 
@@ -79,15 +78,19 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
     name: "freightDetails"
   });
 
-  const watchedFreightDetails = watch("freightDetails");
+  const watchedFreightDetails = watch("freightDetails") ?? [];
   const watchedCharges = watch("charges");
 
-  useEffect(() => {
-    // Grand Total = Total Freight + Transit Insurance (Other Charges excluded from Grand Total)
-    const freightTotal = watchedFreightDetails.reduce((sum, item) => sum + (Number(item.freightAmount) || 0), 0);
-    const total = freightTotal + (Number(watchedCharges.transitInsurance) || 0);
-    setTotalAmount(total);
-  }, [watchedFreightDetails, watchedCharges.transitInsurance]);
+  // Grand Total = Total Freight + Transit Insurance (Other Charges excluded from Grand Total)
+  // Derived during render so it always stays in sync with form values
+  const totalAmount = useMemo(() => {
+    const freightTotal = (Array.isArray(watchedFreightDetails) ? watchedFreightDetails : []).reduce(
+      (sum, item) => sum + (Number(item?.freightAmount) || 0),
+      0
+    );
+    const insurance = Number(watchedCharges?.transitInsurance) || 0;
+    return freightTotal + insurance;
+  }, [watchedFreightDetails, watchedCharges]);
 
   useEffect(() => {
     if (totalAmount > 0) {
