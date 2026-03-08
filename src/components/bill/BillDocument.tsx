@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Bill } from '@/types/bill';
+import { amountToWordsInr } from '@/lib/amount-to-words';
 import { ArcLogo } from './ArcLogo';
 import { Button } from '@/components/ui/button';
 import { Printer, Download, ArrowLeft } from 'lucide-react';
@@ -21,6 +22,8 @@ export function BillDocument({ bill }: { bill: Bill }) {
     bill.totalAmount > 0
       ? bill.totalAmount
       : totalFreight + transitInsuranceValue;
+  const amountInWords =
+    bill.amountInWords || (grandTotal > 0 ? amountToWordsInr(grandTotal) : "");
 
   return (
     <div className="space-y-6">
@@ -130,7 +133,7 @@ export function BillDocument({ bill }: { bill: Bill }) {
             <div className="space-y-4">
               <div>
                 <span className="font-black text-xs block uppercase mb-1">Rupees in words</span>
-                <p className="font-bold italic text-sm p-2 bg-gray-50 border border-dashed border-gray-300 min-h-[40px]">{bill.amountInWords}</p>
+                <p className="font-bold italic text-sm p-2 bg-gray-50 border border-dashed border-gray-300 min-h-[40px]">{amountInWords}</p>
               </div>
               <div className="grid grid-cols-2 gap-4 text-[10px]">
                 <div>

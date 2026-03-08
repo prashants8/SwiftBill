@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { convertAmountToWords } from '@/ai/flows/amount-to-words-conversion';
+import { amountToWordsInr } from '@/lib/amount-to-words';
 import { Bill } from '@/types/bill';
 import { mockDb } from '@/lib/mock-db';
 import { useRouter } from 'next/navigation';
@@ -102,18 +102,14 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
 
   useEffect(() => {
     if (totalAmount > 0) {
-      const updateWords = async () => {
+      const timer = setTimeout(() => {
         setIsConverting(true);
         try {
-          const result = await convertAmountToWords({ amount: totalAmount });
-          setAmountInWords(result.amountInWords);
-        } catch (error) {
-          console.error("Failed to convert amount to words", error);
+          setAmountInWords(amountToWordsInr(totalAmount));
         } finally {
           setIsConverting(false);
         }
-      };
-      const timer = setTimeout(updateWords, 1000);
+      }, 300);
       return () => clearTimeout(timer);
     } else {
       setAmountInWords('');
