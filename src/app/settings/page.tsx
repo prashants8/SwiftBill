@@ -1,18 +1,51 @@
 "use client"
 
+import React from "react"
 import { useRouter } from "next/navigation"
 
 import { useAuth } from "@/components/auth/AuthProvider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { toast } from "@/hooks/use-toast"
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, profile, logOut } = useAuth()
+  const { user, profile, logOut, updateProfile } = useAuth()
+  const [companyName, setCompanyName] = React.useState(profile?.companyName ?? "")
+  const [saving, setSaving] = React.useState(false)
+
+  React.useEffect(() => {
+    setCompanyName(profile?.companyName ?? "")
+  }, [profile?.companyName])
 
   const onLogout = async () => {
     await logOut()
     router.replace("/login")
+  }
+
+  const onSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const name = companyName.trim()
+    if (!name) {
+      toast({ title: "Company name is required", variant: "destructive" })
+      return
+    }
+
+    try {
+      setSaving(true)
+      await updateProfile({ companyName: name })
+      toast({ title: "Profile updated", description: "Company name saved." })
+    } catch (err: unknown) {
+      toast({
+        title: "Could not update profile",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -27,15 +60,27 @@ export default function SettingsPage() {
           <CardTitle>Profile</CardTitle>
           <CardDescription>Your login email and company name.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <div className="text-sm font-medium text-muted-foreground">Company</div>
-            <div className="md:col-span-2 font-medium">{profile?.companyName || "—"}</div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <div className="text-sm font-medium text-muted-foreground">Email</div>
-            <div className="md:col-span-2 font-medium">{user?.email || "—"}</div>
-          </div>
+        <CardContent className="space-y-4">
+          <form onSubmit={onSaveProfile} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="company-name">Company name</Label>
+              <Input
+                id="company-name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Anjaneya Road Carriers"
+              />
+            </div>
+            <div className="space-y-1 text-sm">
+              <div className="text-xs font-medium text-muted-foreground">Login email</div>
+              <div className="font-medium">{user?.email || "—"}</div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving…" : "Save profile"}
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
 

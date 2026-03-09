@@ -20,6 +20,7 @@ type AuthContextValue = {
   signUp: (args: { email: string; password: string; companyName: string }) => Promise<void>
   logIn: (args: { email: string; password: string }) => Promise<void>
   logOut: () => Promise<void>
+  updateProfile: (args: { companyName: string }) => Promise<void>
 }
 
 const AuthContext = React.createContext<AuthContextValue | null>(null)
@@ -192,9 +193,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null)
   }, [])
 
+  const updateProfile = React.useCallback(
+    async (args: { companyName: string }) => {
+      if (!user) {
+        throw new Error("You must be logged in to update your profile.")
+      }
+
+      const email = profile?.email ?? user.email ?? ""
+      await upsertProfile({
+        uid: user.id,
+        email,
+        companyName: args.companyName,
+      })
+
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              companyName: args.companyName,
+            }
+          : {
+              uid: user.id,
+              email,
+              companyName: args.companyName,
+            }
+      )
+    },
+    [profile, user]
+  )
+
   const value: AuthContextValue = React.useMemo(
-    () => ({ user, profile, loading, signUp, logIn, logOut }),
-    [user, profile, loading, signUp, logIn, logOut]
+    () => ({ user, profile, loading, signUp, logIn, logOut, updateProfile }),
+    [user, profile, loading, signUp, logIn, logOut, updateProfile]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

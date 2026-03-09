@@ -15,25 +15,28 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function AllBillsPage() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [search, setSearch] = useState('');
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    loadBills();
-  }, []);
-
-  const loadBills = () => {
+    // Reload bills whenever the logged-in user changes
+    if (!user) {
+      setBills([]);
+      return;
+    }
     setBills(mockDb.getAll().reverse());
-  };
+  }, [user]);
 
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this record?')) {
       mockDb.delete(id);
       toast({ title: "Deleted", description: "Bill record removed successfully" });
-      loadBills();
+      setBills(mockDb.getAll().reverse());
     }
   };
 
