@@ -6,10 +6,6 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'SwiftBill – ARC Billing System',
-  description: 'Bill Entry & Retrieval System for Anjaneya Road Carriers',
-  icons: {
-    icon: '/swiftbill-logo.png',
-  },
 };
 
 export default function RootLayout({
