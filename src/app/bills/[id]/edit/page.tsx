@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Bill } from '@/types/bill';
-import { mockDb } from '@/lib/mock-db';
+import { getBillById } from '@/lib/supabaseBillsRepository';
 import { BillForm } from '@/components/bill/BillForm';
 import { Loader2 } from 'lucide-react';
 
@@ -13,11 +13,21 @@ export default function EditBillPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      const data = mockDb.getById(id as string);
-      setBill(data || null);
-      setLoading(false);
+    let active = true;
+    async function load() {
+      if (!id) return;
+      try {
+        const data = await getBillById(id as string);
+        if (!active) return;
+        setBill(data || null);
+      } finally {
+        if (active) setLoading(false);
+      }
     }
+    load();
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   if (loading) {

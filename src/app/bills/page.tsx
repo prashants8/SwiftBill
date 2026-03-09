@@ -6,7 +6,7 @@ import { Plus, Search, Eye, Filter, Download, MoreHorizontal, Truck, Edit2, Tras
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Bill } from '@/types/bill';
-import { mockDb } from '@/lib/mock-db';
+import { deleteBill, getBills } from '@/lib/supabaseBillsRepository';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -29,14 +29,26 @@ export default function AllBillsPage() {
       setBills([]);
       return;
     }
-    setBills(mockDb.getAll().reverse());
+    getBills()
+      .then((rows) => setBills(rows))
+      .catch(() => setBills([]));
   }, [user]);
 
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this record?')) {
-      mockDb.delete(id);
-      toast({ title: "Deleted", description: "Bill record removed successfully" });
-      setBills(mockDb.getAll().reverse());
+      deleteBill(id)
+        .then(() => {
+          toast({ title: "Deleted", description: "Bill record removed successfully" });
+          return getBills();
+        })
+        .then((rows) => setBills(rows))
+        .catch((e: unknown) => {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: e instanceof Error ? e.message : "Failed to delete bill",
+          });
+        });
     }
   };
 

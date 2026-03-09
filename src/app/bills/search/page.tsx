@@ -6,7 +6,7 @@ import { Search, Loader2, FileWarning } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { mockDb } from '@/lib/mock-db';
+import { getBills } from '@/lib/supabaseBillsRepository';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SearchPage() {
@@ -15,15 +15,14 @@ export default function SearchPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
 
     setIsSearching(true);
-    const bill = mockDb.getByBillNumber(query.trim());
-    
-    setTimeout(() => {
-      setIsSearching(false);
+    try {
+      const bills = await getBills();
+      const bill = bills.find((b) => b.billNumber === query.trim());
       if (bill) {
         router.push(`/bills/${bill.id}`);
       } else {
@@ -33,7 +32,9 @@ export default function SearchPage() {
           description: `No bill found with number: ${query}`
         });
       }
-    }, 600);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (

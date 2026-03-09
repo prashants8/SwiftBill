@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { amountToWordsInr } from '@/lib/amount-to-words';
 import { Bill } from '@/types/bill';
-import { mockDb } from '@/lib/mock-db';
+import { createBill, updateBill } from '@/lib/supabaseBillsRepository';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -116,9 +116,9 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
     }
   }, [totalAmount]);
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     try {
-      const newBill: Bill = {
+      const payload: Bill = {
         ...data,
         id: initialData?.id || crypto.randomUUID(),
         totalAmount,
@@ -126,11 +126,12 @@ export function BillForm({ initialData }: { initialData?: Bill }) {
         createdAt: initialData?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      mockDb.save(newBill);
-      toast({ title: "Success", description: "Bill record updated successfully" });
-      router.push(`/bills/${newBill.id}`);
+
+      const saved = initialData ? await updateBill(payload) : await createBill(payload);
+      toast({ title: "Success", description: initialData ? "Bill record updated successfully" : "Bill saved successfully" });
+      router.push(`/bills/${saved.id}`);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message });
+      toast({ variant: "destructive", title: "Error", description: error?.message ?? "Failed to save bill" });
     }
   };
 

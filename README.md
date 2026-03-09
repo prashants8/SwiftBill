@@ -1,10 +1,10 @@
 # SwiftBill Freight - ARC Billing System
 
-This is a Next.js application for managing ARC freight bills, integrated with Genkit for AI-powered features.
+This is a Next.js application for managing ARC freight bills, backed by Supabase for authentication and storage.
 
 ## Core Features
 - **Structured Entry**: Multi-section form replicating the ARC Freight Bill layout.
-- **AI Amount-to-Words**: Automatically converts numeric totals to Indian Rupee words (e.g., "Rupees One Lakh...").
+- **Amount-to-Words**: Automatically converts numeric totals to Indian Rupee words (e.g., "Rupees One Lakh...").
 - **Print-Ready Documents**: Precise visual reproduction of physical bills for printing or PDF export.
 - **Search & Retrieval**: Quick lookup by Bill Number.
 
@@ -57,10 +57,3 @@ If you use Supabase auth and email confirmation, add your app URLs in the Supaba
 - **Redirect URLs**: Add `https://swift-bill-ic4p.vercel.app/auth/callback` (and `http://localhost:3000/auth/callback` for local dev)
 
 New signups will use the current site origin for the confirmation link. If a link has expired, users can go to **Login → Get help with confirmation** (or `/auth/error`) to request a new one.
-
-### 5. Firebase App Hosting
-- Go to the [Firebase Console](https://console.firebase.google.com/).
-- Select your project.
-- Go to **Build > App Hosting**.
-- Click **Get Started** and select **Connect to GitHub**.
-- Select your repository and follow the setup wizard.

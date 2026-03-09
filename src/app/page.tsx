@@ -6,7 +6,7 @@ import { Plus, Search, FileText, TrendingUp, Users, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bill } from '@/types/bill';
-import { mockDb } from '@/lib/mock-db';
+import { getBills } from '@/lib/supabaseBillsRepository';
 import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function Dashboard() {
@@ -19,18 +19,35 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    const bills = mockDb.getAll();
-    setRecentBills(bills.slice(-5).reverse());
-    
-    const revenue = bills.reduce((sum, bill) => sum + bill.totalAmount, 0);
-    const customers = new Set(bills.map(b => b.customerName)).size;
-    
-    setStats({
-      totalBills: bills.length,
-      totalRevenue: revenue,
-      uniqueCustomers: customers
-    });
-  }, []);
+    let active = true;
+    async function load() {
+      if (!user) {
+        setRecentBills([]);
+        setStats({ totalBills: 0, totalRevenue: 0, uniqueCustomers: 0 });
+        return;
+      }
+      try {
+        const bills = await getBills();
+        if (!active) return;
+        setRecentBills(bills.slice(0, 5));
+
+        const revenue = bills.reduce((sum, bill) => sum + bill.totalAmount, 0);
+        const customers = new Set(bills.map((b) => b.customerName)).size;
+
+        setStats({
+          totalBills: bills.length,
+          totalRevenue: revenue,
+          uniqueCustomers: customers
+        });
+      } catch {
+        if (!active) return;
+        setRecentBills([]);
+        setStats({ totalBills: 0, totalRevenue: 0, uniqueCustomers: 0 });
+      }
+    }
+    load();
+    return () => { active = false; };
+  }, [user]);
 
   return (
     <div className="space-y-8">
